@@ -86,7 +86,7 @@ bool init()
 		}
 
 		//Create window
-		gWindow = SDL_CreateWindow( "Minesweeper", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
+		gWindow = SDL_CreateWindow( "PONG", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
 		if( gWindow == NULL )
 		{
 			printf( "Window could not be created! SDL Error: %s\n", SDL_GetError() );
@@ -216,6 +216,7 @@ int main( int argc, char* args[] )
 /**-----[GAME LOOP START!]-----**/
 		while( !quit )
 		{
+			SDL_ShowCursor(SDL_DISABLE);
 
 	        //Start cap timer
 	        capTimer.start();
@@ -268,7 +269,8 @@ int main( int argc, char* args[] )
             currentState->render();
 
 	        //Render textures
-	        gFPSTextTexture.render( ( SCREEN_WIDTH - gFPSTextTexture.getWidth() ), gFPSTextTexture.getHeight() / 2 );
+	        if (DBG_SHOW_FPS)
+	        	gFPSTextTexture.render( ( SCREEN_WIDTH - gFPSTextTexture.getWidth() ), gFPSTextTexture.getHeight() / 2 );
 
             //Update screen
             SDL_RenderPresent( gRenderer );

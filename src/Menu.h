@@ -10,9 +10,9 @@ class Menu : public GameState
     public:
 
     
-    LButton eButton;    
+    //LButton eButton;    
     LButton mButton;
-    LButton hButton;
+    //LButton hButton;
 
     LTexture ButtonSpriteSheet;
 
@@ -27,8 +27,15 @@ class Menu : public GameState
 
     SDL_Rect ButtonSpriteClips[ BUTTON_SPRITE_NUM ];
 
+    SDL_Rect paddle;
+
     ///Constructor Function
     Menu(){
+
+        paddle.x = 12;
+        paddle.y = 0;
+        paddle.w = PADDLE_WIDTH;
+        paddle.h = PADDLE_HEIGHT;
 
         //Load media
         if( !loadMedia() )
@@ -38,9 +45,9 @@ class Menu : public GameState
         else
         {
         	//Initialize Menu here
-            eButton = LButton(SCREEN_WIDTH/4 - BUTTON_WIDTH/2, 200, BUTTON_WIDTH, BUTTON_HEIGHT);
-        	mButton = LButton(SCREEN_WIDTH/2 - BUTTON_WIDTH/2, 200, BUTTON_WIDTH, BUTTON_HEIGHT);
-            hButton = LButton(SCREEN_WIDTH*3/4 - BUTTON_WIDTH/2, 200, BUTTON_WIDTH, BUTTON_HEIGHT);
+            //eButton = LButton(SCREEN_WIDTH/4 - BUTTON_WIDTH/2, 200, BUTTON_WIDTH, BUTTON_HEIGHT);
+        	mButton = LButton(0, SCREEN_HEIGHT/2, SCREEN_WIDTH, mText.getHeight() );
+            //hButton = LButton(SCREEN_WIDTH*3/4 - BUTTON_WIDTH/2, 200, BUTTON_WIDTH, BUTTON_HEIGHT);
 
         	SDL_SetWindowSize(gWindow,SCREEN_WIDTH, SCREEN_HEIGHT);
         }
@@ -71,48 +78,21 @@ class Menu : public GameState
         bool success = true;
 
         //Load sprite sheet texture
-        if( !cautionBackdrop.loadFromFile( "../assets/caution_background.png") )
-        {
-            printf( "Failed to load caution texture!\n" );
-            success = false;
-        }
 
-        if( !menuPlate.loadFromFile( "../assets/menu_plate.png") )
-        {
-            printf( "Failed to load menu plate texture!\n" );
-            success = false;
-        }
 
-        if( !ButtonSpriteSheet.loadFromFile( "../assets/button_SS.png") )
-        {
-            printf( "Failed to load sprite sheet texture!\n" );
-            success = false;
-        }
-        else
-        {
-            int n = 0;
-            for (int i = 0; i < BUTTON_SS_COLUMNS; i++){
-                for (int j = 0; j < BUTTON_SS_ROWS; j++){
-                    ButtonSpriteClips[ n ].x = BUTTON_WIDTH * i;
-                    ButtonSpriteClips[ n ].y = BUTTON_HEIGHT * j;
-                    ButtonSpriteClips[ n ].w = BUTTON_WIDTH;
-                    ButtonSpriteClips[ n ].h = BUTTON_HEIGHT;
-                    n++;
-                }
-            }
-        }
+
         //Open the font
-        gFont = TTF_OpenFont( "../assets/PixelSplitter-Bold.ttf", 60 );
+        gFont = TTF_OpenFont( "../assets/SAMSRG__.TTF", 60 );
         if( gFont == NULL )
         {
-            printf( "Failed to load Minesweeper Title font! SDL_ttf Error: %s\n", TTF_GetError() );
+            printf( "Failed to load Pong Title font! SDL_ttf Error: %s\n", TTF_GetError() );
             success = false;
         }
         else
         {
             //Render text
-            SDL_Color textColor = { 0, 0, 0 };
-            if( !titleText.loadFromRenderedText( "[Game]", textColor ) )
+            SDL_Color textColor = { 0xFF, 0xFF, 0xFF };
+            if( !titleText.loadFromRenderedText( "PONG", textColor ) )
             {
                 printf( "Failed to render title text!\n" );
                 success = false;
@@ -128,7 +108,7 @@ class Menu : public GameState
         else
         {
             //Render text
-            SDL_Color textColor = { 0, 0, 0 };
+            SDL_Color textColor = { 0xFF, 0xFF, 0xFF };
             if( !creditText.loadFromRenderedText( "By Joel Turner | Version: 0.0.0", textColor ) )
             {
                 printf( "Failed to render credit text!\n" );
@@ -136,22 +116,22 @@ class Menu : public GameState
             }
         }
 
-        gFont = TTF_OpenFont( "../assets/PressStart2P.ttf", 20 );
+        gFont = TTF_OpenFont( "../assets/SAMST___.TTF", 40 );
         if( gFont == NULL )
         {
-            printf( "Failed to load Minesweeper font! SDL_ttf Error: %s\n", TTF_GetError() );
+            printf( "Failed to load Pong font! SDL_ttf Error: %s\n", TTF_GetError() );
             success = false;
         }
         else
         {
             //Render text
-            SDL_Color textColor = { 0, 0, 0 };
+            SDL_Color textColor = { 0xFF, 0xFF, 0xFF };
             if( !eText.loadFromRenderedText( "Easy", textColor ) )
             {
                 printf( "Failed to render eText!\n" );
                 success = false;
             }
-            if( !mText.loadFromRenderedText( "Med", textColor ) )
+            if( !mText.loadFromRenderedText( "BEGIN", textColor ) )
             {
                 printf( "Failed to render mText!\n" );
                 success = false;
@@ -168,37 +148,70 @@ class Menu : public GameState
     ///Handles mouse event
     void handleEvent( SDL_Event* e){
 
-        //Handle button events first
-        eButton.handleEvent(e);
-        mButton.handleEvent(e);
-        hButton.handleEvent(e);
+        int x, y;
 
-        if (eButton.isClicked)
-            set_next_state(STATE_GAME_EASY);
+        //Get mouse position
+        if( e->type == SDL_MOUSEMOTION ){
+            SDL_GetMouseState( &x, &y );
+            //paddle.x = x;
+        paddle.y = y - (paddle.h/2);
+            if ( y > SCREEN_HEIGHT - paddle.h/2 )
+                paddle.y = SCREEN_HEIGHT - paddle.h;
+            if ( y < paddle.h/2 )
+                paddle.y = 0;
+        }
+
+        //Handle button events first
+        //eButton.handleEvent(e);
+        mButton.handleEvent(e);
+       // hButton.handleEvent(e);
+
+        //if (eButton.isClicked)
+            //set_next_state(STATE_GAME_EASY);
 
         if (mButton.isClicked)
             set_next_state(STATE_GAME_MED);
 
-        if (hButton.isClicked)
-            set_next_state(STATE_GAME_HARD);
+        //if (hButton.isClicked)
+            //set_next_state(STATE_GAME_HARD);
     }
 
     void logic(){
-    	eButton.logic();
+
+        if (mButton.inside){
+            SDL_Color textColor = { 0xFF, 0x00, 0x00, 0x00 };
+            if( !mText.loadFromRenderedText( "BEGIN", textColor ) )
+            {
+                printf( "Failed to render mText!\n" );
+            }
+        }
+        else {
+            SDL_Color textColor = { 0x0FF, 0xFF, 0xFF, 0xFF };
+            if( !mText.loadFromRenderedText( "BEGIN", textColor ) )
+            {
+                printf( "Failed to render mText!\n" );
+            }
+        }
+    	//eButton.logic();
         mButton.logic();
-        hButton.logic();
+        //hButton.logic();
+
+
     }
 
     void render(){
-    	cautionBackdrop.render(0,0);
-    	menuPlate.render(32,32);
-        eButton.render(ButtonSpriteClips, &ButtonSpriteSheet);
-        mButton.render(ButtonSpriteClips, &ButtonSpriteSheet);
-        hButton.render(ButtonSpriteClips, &ButtonSpriteSheet);
+
+        SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+        SDL_RenderFillRect(gRenderer, &paddle);
+    	//cautionBackdrop.render(0,0);
+    	//menuPlate.render(32,32);
+        //eButton.render(ButtonSpriteClips, &ButtonSpriteSheet);
+        //mButton.render(ButtonSpriteClips, &ButtonSpriteSheet);
+        //hButton.render(ButtonSpriteClips, &ButtonSpriteSheet);
         titleText.render(SCREEN_WIDTH/2 - titleText.getWidth()/2, 30);
-        eText.render(SCREEN_WIDTH/4 - BUTTON_WIDTH/2 + eButton.mDimension.w/2 - eText.getWidth()/2, 200 + BUTTON_HEIGHT + 10);
-        mText.render(SCREEN_WIDTH/2 - BUTTON_WIDTH/2 + mButton.mDimension.w/2 - mText.getWidth()/2, 200 + BUTTON_HEIGHT + 10);
-        hText.render(SCREEN_WIDTH*3/4 - BUTTON_WIDTH/2 + hButton.mDimension.w/2 - hText.getWidth()/2, 200 + BUTTON_HEIGHT + 10);
+        //eText.render(SCREEN_WIDTH/4 - BUTTON_WIDTH/2 + eButton.mDimension.w/2 - eText.getWidth()/2, 200 + BUTTON_HEIGHT + 10);
+        mText.render(SCREEN_WIDTH/2 - mText.getWidth()/2, SCREEN_HEIGHT/2);
+        //hText.render(SCREEN_WIDTH*3/4 - BUTTON_WIDTH/2 + hButton.mDimension.w/2 - hText.getWidth()/2, 200 + BUTTON_HEIGHT + 10);
         creditText.render(SCREEN_WIDTH/2 - creditText.getWidth()/2, SCREEN_HEIGHT - 60);
     }
 

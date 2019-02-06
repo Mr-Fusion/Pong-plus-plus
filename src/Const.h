@@ -10,6 +10,8 @@ extern SDL_Window* gWindow = NULL;
 //Globally used font
 extern TTF_Font *gFont = NULL;
 
+const bool DBG_SHOW_FPS = false;
+
 //Screen dimension constants
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;

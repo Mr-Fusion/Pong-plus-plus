@@ -29,7 +29,7 @@ class Pong : public GameState
     Pong(){
 
         paddle.x = 12;
-        paddle.y = 0;
+        paddle.y = SCREEN_HEIGHT/2;
         paddle.w = PADDLE_WIDTH;
         paddle.h = PADDLE_HEIGHT;
 
@@ -137,7 +137,7 @@ class Pong : public GameState
                 }
             }
         }
-        if (ball.x < -10) {
+        if (ball.x < -20) {
             bVel.xVel *= -1;
             ball.x = SCREEN_WIDTH/2;
             ball.y = SCREEN_HEIGHT/2;
