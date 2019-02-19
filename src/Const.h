@@ -30,7 +30,10 @@ const int BUTTON_HEIGHT = 100;
 const int BUTTON_WIDTH = 100;
 
 const int PADDLE_HEIGHT = 60;
-const int PADDLE_WIDTH = 6;
+const int PADDLE_WIDTH = 8;
+
+const int BALL_WIDTH = 8;
+const int BALL_HEIGHT = 8;
 
 const int MAX_SPEED = 15;
 

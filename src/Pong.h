@@ -21,6 +21,9 @@ class Pong : public GameState
     int lScore;
     int rScore;
 
+    bool lGoal;
+    bool rGoal;
+
     SDL_Rect ball;
 
     VelocityVector bVel;
@@ -36,6 +39,11 @@ class Pong : public GameState
     LTexture lScoreTextTexture;
     LTexture rScoreTextTexture;
 
+    LTimer delayTimer;
+
+    //The sound effects that will be used
+    Mix_Chunk *gHigh = NULL;
+    Mix_Chunk *gLow = NULL;
 
     ///Constructor Function
     Pong(){
@@ -52,14 +60,16 @@ class Pong : public GameState
 
         ball.x = SCREEN_WIDTH/2;
         ball.y = SCREEN_HEIGHT/2;
-        ball.w = 6;
-        ball.h = 6;
+        ball.w = BALL_WIDTH;
+        ball.h = BALL_HEIGHT;
 
         bVel.xVel = 0;
         bVel.yVel = 0;
 
         pVel.xVel = 0;
         pVel.yVel = 0;
+
+        textColor = { 0xFF, 0xFF, 0xFF, 0xFF};
 
         //Load media
         if( !loadMedia() )
@@ -84,6 +94,11 @@ class Pong : public GameState
 
         //Free loaded image
 
+        //Free the sound effects
+        Mix_FreeChunk( gLow );
+        gLow = NULL;
+        Mix_FreeChunk( gHigh );
+        gHigh = NULL;
 
     }
 
@@ -95,6 +110,9 @@ class Pong : public GameState
 
         lScore = 0;
         rScore = 0;
+
+        lGoal = false;
+        rGoal = false;
 
         //Set text to be rendered
         rScoreText.str( "" );
@@ -122,6 +140,21 @@ class Pong : public GameState
     {
         //Loading success flag
         bool success = true;
+
+        //Load sound effects
+        gLow = Mix_LoadWAV( "../assets/sfx_sounds_Blip7.wav" );
+        if( gLow == NULL )
+        {
+            printf( "Failed to load scratch sound effect! SDL_mixer Error: %s\n", Mix_GetError() );
+            success = false;
+        }
+
+        gHigh = Mix_LoadWAV( "../assets/sfx_sounds_Blip9.wav" );
+        if( gHigh == NULL )
+        {
+            printf( "Failed to load scratch sound effect! SDL_mixer Error: %s\n", Mix_GetError() );
+            success = false;
+        }
 
 
         return success;
@@ -162,12 +195,20 @@ class Pong : public GameState
         ball.y += bVel.yVel;
 
 
-        if (ball.y + bVel.yVel > SCREEN_HEIGHT - ball.h)
+        if (ball.y + bVel.yVel > SCREEN_HEIGHT - ball.h){
             bVel.yVel *= -1;
+            Mix_PlayChannel( -1, gLow, 0 );
+            printf("sound_plays\n");
+            printf("Music Error %s\n",Mix_GetError());
+        }
         //if (ball.x > SCREEN_WIDTH - ball.w)
             //bVel.xVel *= -1;
-        if (ball.y < 0) 
+        if (ball.y < 0){
             bVel.yVel *= -1;
+            Mix_PlayChannel( -1, gLow, 0 );
+            printf("sound_plays\n");
+            printf("Music Error %s\n",Mix_GetError());
+        }
 
         //Left Paddle
         if (ball.x + bVel.xVel < lPaddle.x + PADDLE_WIDTH){
@@ -178,16 +219,19 @@ class Pong : public GameState
                         if (bVel.xVel < MAX_SPEED)
                             bVel.xVel += 1;
                         bVel.yVel = (ball.y - (lPaddle.y + lPaddle.h/2 ) ) /3;
+                        printf("sound_plays\n");
+                        Mix_PlayChannel( -1, gHigh, 0 );
+                        printf("Music Error %s\n",Mix_GetError());
                     }
                 }
             }
         }
-        if (ball.x < -20) {
-            bVel.xVel = 5;
-            bVel.yVel = 1;
-            ball.x = SCREEN_WIDTH/2;
-            ball.y = SCREEN_HEIGHT/2;
+        if ( (ball.x < -20) && (!rGoal) ){
+            rGoal = true;
             rScore++;
+            bVel.yVel = 0;
+            delayTimer.start();
+            //INSERT SCORE SOUND EFFECT HERE
 
             //Set text to be rendered
             rScoreText.str( "" );
@@ -209,16 +253,18 @@ class Pong : public GameState
                             bVel.xVel += 1;
                         bVel.xVel *= -1;
                         bVel.yVel = (ball.y - (rPaddle.y + rPaddle.h/2 ) ) /3;
+                        Mix_PlayChannel( -1, gHigh, 0 );
+                        printf("sound_plays\n");
+                        printf("Music Error %s\n",Mix_GetError());
                     }
                 }
             }
         }
-        if (ball.x > SCREEN_WIDTH + 20) {
-            bVel.xVel = -5;
-            bVel.yVel = 1;
-            ball.x = SCREEN_WIDTH/2;
-            ball.y = SCREEN_HEIGHT/2;
+        if ( (ball.x > SCREEN_WIDTH + 20) && (!lGoal) ) {
+            lGoal = true;
             lScore++;
+            bVel.yVel = 0;
+            delayTimer.start();
 
             //Set text to be rendered
             lScoreText.str( "" );
@@ -232,6 +278,14 @@ class Pong : public GameState
         }
 
         //Right Paddle AI
+        // NOTES: Velocity 8-9 is a good challenge. Nearly impossible to score until the ball gains x velocity,
+        // and even then, scoring against the AI requires a sharp bank shot
+
+        // 10 is technically possibly, but requires nearly perfect play
+
+        // Need to determine what the easiest difficulty should be. 5 is a good candidate
+
+        // 3 is piss easy. Babby mode. Doesn't even look like the paddle is trying
 
         rPaddle.y += pVel.yVel;
 
@@ -247,8 +301,27 @@ class Pong : public GameState
         else
             pVel.yVel = 0;
 
-
-
+        //Reset Serve after scoring
+        if (lGoal){
+            if (delayTimer.getTicks() > 2000){
+                bVel.xVel = -5;
+                bVel.yVel = rand() % 10 - 5;
+                ball.x = SCREEN_WIDTH/2;
+                ball.y = SCREEN_HEIGHT/2;
+                delayTimer.stop();
+                lGoal = false;
+            }
+        }
+        if (rGoal){
+            if (delayTimer.getTicks() > 2000){
+                bVel.xVel = 5;
+                bVel.yVel = rand() % 10 - 5;
+                ball.x = SCREEN_WIDTH/2;
+                ball.y = SCREEN_HEIGHT/2;
+                delayTimer.stop();
+                rGoal = false;
+            }
+        }
 
     }
 
