@@ -44,11 +44,13 @@ class Pong : public GameState
     std::stringstream lScoreText;
     std::stringstream rScoreText;
     std::stringstream msgText;
+    std::stringstream msgText2;
 
     //Scene textures
     LTexture lScoreTextTexture;
     LTexture rScoreTextTexture;
     LTexture msgTextTexture;
+    LTexture msgTextTexture2;
 
     LTimer delayTimer;
 
@@ -130,6 +132,7 @@ class Pong : public GameState
         rScoreTextTexture.free();
         lScoreTextTexture.free();
         msgTextTexture.free();
+        msgTextTexture2.free();
 
     }
 
@@ -203,7 +206,17 @@ class Pong : public GameState
         //Render text
         if( !msgTextTexture.loadFromRenderedText( msgText.str().c_str(), textColor ) )
         {
-            printf( "Unable to render Left Score texture!\n" );
+            printf( "Unable to render message texture!\n" );
+        }
+
+        //Set text to be rendered
+        msgText2.str( "" );
+        msgText2 << "" << "Good Luck!";
+
+        //Render text
+        if( !msgTextTexture2.loadFromRenderedText( msgText2.str().c_str(), textColor ) )
+        {
+            printf( "Unable to render message texture!\n" );
         }
 
 
@@ -223,6 +236,19 @@ class Pong : public GameState
 
     }
 
+    void setMessage2(char* text){
+        //Set text to be rendered
+        msgText2.str( "" );
+        msgText2 << text;
+
+        //Render text
+        if( !msgTextTexture2.loadFromRenderedText( msgText2.str().c_str(), textColor ) )
+        {
+            printf( "Unable to render Left Score texture!\n" );
+        }
+
+    }
+
 
     ///Routine for winning the game
     void gameOver(){
@@ -230,10 +256,12 @@ class Pong : public GameState
         rGoal = false;
         delayTimer.stop();
 
+        setMessage("Final Score");
+
         if (victory)
-            setMessage("You Win!");
+            setMessage2("You Win! Right Click to Exit");
         else 
-            setMessage("You Lose...");
+            setMessage2("You Lose. Right Click to Exit");
     }
 
     ///Handles mouse event
@@ -405,6 +433,7 @@ class Pong : public GameState
                 rGoal = false;
 
                 setMessage("");
+                setMessage2("");
 
                 newGame = false;
             }
@@ -440,6 +469,7 @@ class Pong : public GameState
         lScoreTextTexture.render( PADDLE_WIDTH * 10, lScoreTextTexture.getHeight() / 2 );
         rScoreTextTexture.render( SCREEN_WIDTH - rScoreTextTexture.getWidth() - (PADDLE_WIDTH * 10), rScoreTextTexture.getHeight() / 2 );
         msgTextTexture.render(SCREEN_WIDTH/2 - msgTextTexture.getWidth()/2, msgTextTexture.getHeight() / 2 );
+        msgTextTexture2.render(SCREEN_WIDTH/2 - msgTextTexture2.getWidth()/2, SCREEN_HEIGHT - msgTextTexture2.getHeight() * 2 );
     }
 
 };
