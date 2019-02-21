@@ -17,12 +17,15 @@ class Pong : public GameState
 
     SDL_Rect lPaddle;
     SDL_Rect rPaddle;
+    SDL_Rect field;
 
     int lScore;
     int rScore;
 
     bool lGoal;
     bool rGoal;
+    bool newGame;
+    bool victory;
 
     SDL_Rect ball;
 
@@ -31,13 +34,21 @@ class Pong : public GameState
 
     SDL_Color textColor;
 
+    // Background color
+    int bgR, bgG, bgB;
+
+    // Sprite color
+    int spR, spG, spB;
+
     //In memory text stream
     std::stringstream lScoreText;
     std::stringstream rScoreText;
+    std::stringstream msgText;
 
     //Scene textures
     LTexture lScoreTextTexture;
     LTexture rScoreTextTexture;
+    LTexture msgTextTexture;
 
     LTimer delayTimer;
 
@@ -63,13 +74,29 @@ class Pong : public GameState
         ball.w = BALL_WIDTH;
         ball.h = BALL_HEIGHT;
 
+        field.x = 0;
+        field.y = 0;
+        field.w = SCREEN_WIDTH;
+        field.h = SCREEN_HEIGHT;
+
         bVel.xVel = 0;
         bVel.yVel = 0;
 
         pVel.xVel = 0;
         pVel.yVel = 0;
 
-        textColor = { 0xFF, 0xFF, 0xFF, 0xFF};
+        lScore = 0;
+        rScore = 0;
+
+        lGoal = false;
+        rGoal = false;
+        victory = false;
+
+        bgR = bgG = bgB = 0x00;
+
+        spR = spG = spB = 0xFF;
+
+        textColor = { spR, spG, spB, 0xFF};
 
         //Load media
         if( !loadMedia() )
@@ -80,7 +107,7 @@ class Pong : public GameState
         {
             //Initialize playing field dimensions, difficulty, and appearance
 
-            newGame();
+            startGame();
 
             //Initialize and display graphical interface
             SDL_SetWindowSize(gWindow,SCREEN_WIDTH,SCREEN_HEIGHT);
@@ -100,39 +127,32 @@ class Pong : public GameState
         Mix_FreeChunk( gHigh );
         gHigh = NULL;
 
+        rScoreTextTexture.free();
+        lScoreTextTexture.free();
+        msgTextTexture.free();
+
     }
 
-    void newGame()
+    void startGame()
     {
 
-        bVel.xVel = 5;
-        bVel.yVel = 1;
-
-        lScore = 0;
-        rScore = 0;
-
-        lGoal = false;
-        rGoal = false;
+        ball.x = SCREEN_WIDTH/2;
+        ball.y = SCREEN_HEIGHT/2;
 
         //Set text to be rendered
-        rScoreText.str( "" );
-        rScoreText << "" << rScore;
+        msgText.str( "" );
+        msgText << "" << POINTS_TO_WIN << " Points to Win!";
 
         //Render text
-        if( !rScoreTextTexture.loadFromRenderedText( rScoreText.str().c_str(), textColor ) )
-        {
-            printf( "Unable to render Right Score texture!\n" );
-        }
-
-        //Set text to be rendered
-        lScoreText.str( "" );
-        lScoreText << "" << lScore;
-
-        //Render text
-        if( !lScoreTextTexture.loadFromRenderedText( lScoreText.str().c_str(), textColor ) )
+        if( !msgTextTexture.loadFromRenderedText( msgText.str().c_str(), textColor ) )
         {
             printf( "Unable to render Left Score texture!\n" );
         }
+
+        delayTimer.start();
+
+        newGame = true;
+
     }
 
     //TODO: Can we streamline the sprite sheet creationg into a function?
@@ -156,13 +176,64 @@ class Pong : public GameState
             success = false;
         }
 
+        //Set text to be rendered
+        rScoreText.str( "" );
+        rScoreText << "" << rScore;
+
+        //Render text
+        if( !rScoreTextTexture.loadFromRenderedText( rScoreText.str().c_str(), textColor ) )
+        {
+            printf( "Unable to render Right Score texture!\n" );
+        }
+
+        //Set text to be rendered
+        lScoreText.str( "" );
+        lScoreText << "" << lScore;
+
+        //Render text
+        if( !lScoreTextTexture.loadFromRenderedText( lScoreText.str().c_str(), textColor ) )
+        {
+            printf( "Unable to render Left Score texture!\n" );
+        }
+
+        //Set text to be rendered
+        msgText.str( "" );
+        msgText << "" << POINTS_TO_WIN << " Points to Win!";
+
+        //Render text
+        if( !msgTextTexture.loadFromRenderedText( msgText.str().c_str(), textColor ) )
+        {
+            printf( "Unable to render Left Score texture!\n" );
+        }
+
 
         return success;
     }
 
+    void setMessage(char* text){
+        //Set text to be rendered
+        msgText.str( "" );
+        msgText << text;
+
+        //Render text
+        if( !msgTextTexture.loadFromRenderedText( msgText.str().c_str(), textColor ) )
+        {
+            printf( "Unable to render Left Score texture!\n" );
+        }
+
+    }
+
 
     ///Routine for winning the game
-    void victory(void){
+    void gameOver(){
+        lGoal = false;
+        rGoal = false;
+        delayTimer.stop();
+
+        if (victory)
+            setMessage("You Win!");
+        else 
+            setMessage("You Lose...");
     }
 
     ///Handles mouse event
@@ -189,8 +260,6 @@ class Pong : public GameState
 
     void logic(){
 
-        int yIntercept;
-
         ball.x += bVel.xVel;
         ball.y += bVel.yVel;
 
@@ -198,16 +267,12 @@ class Pong : public GameState
         if (ball.y + bVel.yVel > SCREEN_HEIGHT - ball.h){
             bVel.yVel *= -1;
             Mix_PlayChannel( -1, gLow, 0 );
-            printf("sound_plays\n");
-            printf("Music Error %s\n",Mix_GetError());
         }
         //if (ball.x > SCREEN_WIDTH - ball.w)
             //bVel.xVel *= -1;
         if (ball.y < 0){
             bVel.yVel *= -1;
             Mix_PlayChannel( -1, gLow, 0 );
-            printf("sound_plays\n");
-            printf("Music Error %s\n",Mix_GetError());
         }
 
         //Left Paddle
@@ -219,17 +284,20 @@ class Pong : public GameState
                         if (bVel.xVel < MAX_SPEED)
                             bVel.xVel += 1;
                         bVel.yVel = (ball.y - (lPaddle.y + lPaddle.h/2 ) ) /3;
-                        printf("sound_plays\n");
                         Mix_PlayChannel( -1, gHigh, 0 );
-                        printf("Music Error %s\n",Mix_GetError());
                     }
                 }
             }
         }
         if ( (ball.x < -20) && (!rGoal) ){
+
             rGoal = true;
             rScore++;
+
+            ball.x = -10;
             bVel.yVel = 0;
+            bVel.xVel = 0;
+
             delayTimer.start();
             //INSERT SCORE SOUND EFFECT HERE
 
@@ -254,16 +322,18 @@ class Pong : public GameState
                         bVel.xVel *= -1;
                         bVel.yVel = (ball.y - (rPaddle.y + rPaddle.h/2 ) ) /3;
                         Mix_PlayChannel( -1, gHigh, 0 );
-                        printf("sound_plays\n");
-                        printf("Music Error %s\n",Mix_GetError());
                     }
                 }
             }
         }
         if ( (ball.x > SCREEN_WIDTH + 20) && (!lGoal) ) {
+            ball.x = SCREEN_WIDTH+10;
+
             lGoal = true;
             lScore++;
             bVel.yVel = 0;
+            bVel.xVel = 0;
+
             delayTimer.start();
 
             //Set text to be rendered
@@ -295,9 +365,9 @@ class Pong : public GameState
             rPaddle.y = SCREEN_HEIGHT - PADDLE_HEIGHT;
 
         if (ball.y < rPaddle.y + PADDLE_HEIGHT/4)
-            pVel.yVel = -5;
+            pVel.yVel = -6;
         else if (ball.y > rPaddle.y + PADDLE_HEIGHT * 3/4)
-            pVel.yVel = 5;
+            pVel.yVel = 6;
         else
             pVel.yVel = 0;
 
@@ -323,18 +393,53 @@ class Pong : public GameState
             }
         }
 
+        if (newGame){
+            if (delayTimer.getTicks() > 3000){
+                bVel.xVel = 5;
+                bVel.yVel = 1;
+
+                lScore = 0;
+                rScore = 0;
+
+                lGoal = false;
+                rGoal = false;
+
+                setMessage("");
+
+                newGame = false;
+            }
+        }
+
+        if (lScore == POINTS_TO_WIN) {
+            victory = true;
+            gameOver();
+        }
+        if (rScore == POINTS_TO_WIN) {
+            gameOver();
+        }
+
+        //spR = ball.y % 256;
+        //spG = lPaddle.y % 256;
+        //spB = rPaddle.y % 256;
+        //bgR = 0x80;
+
     }
 
     void render(){
 
 
-        SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+        //SDL_SetRenderDrawColor( gRenderer, ball.x % 256, ball.y % 256, 0xFF , 0xFF );
+        SDL_SetRenderDrawColor( gRenderer, bgR, bgG, bgB, 0xFF );
+        SDL_RenderFillRect(gRenderer, &field);
+        SDL_SetRenderDrawColor( gRenderer, spR, spG, spB, 0xFF );
+        //SDL_SetRenderDrawColor( gRenderer, rPaddle.y % 256, ball.y % 256, lPaddle.y % 256, 0xFF );
+        //SDL_SetRenderDrawColor( gRenderer, ball.x % 256, ball.y % 256, 0xFF , 0xFF );
         SDL_RenderFillRect(gRenderer, &lPaddle);
         SDL_RenderFillRect(gRenderer, &rPaddle);
         SDL_RenderFillRect(gRenderer, &ball);
         lScoreTextTexture.render( PADDLE_WIDTH * 10, lScoreTextTexture.getHeight() / 2 );
         rScoreTextTexture.render( SCREEN_WIDTH - rScoreTextTexture.getWidth() - (PADDLE_WIDTH * 10), rScoreTextTexture.getHeight() / 2 );
-
+        msgTextTexture.render(SCREEN_WIDTH/2 - msgTextTexture.getWidth()/2, msgTextTexture.getHeight() / 2 );
     }
 
 };

@@ -37,6 +37,12 @@ const int BALL_HEIGHT = 8;
 
 const int MAX_SPEED = 15;
 
+const int POINTS_TO_WIN = 15;
+
+const int MAJOR_REV = 0;
+const int MINOR_REV = 9;
+const int INCREMENTAL_REV = 0;
+
 enum direction
 {
     NORTH = 0,
