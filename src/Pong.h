@@ -22,6 +22,8 @@ class Pong : public GameState
     int lScore;
     int rScore;
 
+    int fun;
+
     bool lGoal;
     bool rGoal;
     bool newGame;
@@ -89,6 +91,8 @@ class Pong : public GameState
 
         lScore = 0;
         rScore = 0;
+
+        fun = 0;
 
         lGoal = false;
         rGoal = false;
@@ -292,13 +296,13 @@ class Pong : public GameState
         ball.y += bVel.yVel;
 
 
-        if (ball.y + bVel.yVel > SCREEN_HEIGHT - ball.h){
+        if ( ( ball.y + bVel.yVel > SCREEN_HEIGHT - ball.h ) && ( bVel.yVel > 0 ) ) {
             bVel.yVel *= -1;
             Mix_PlayChannel( -1, gLow, 0 );
         }
         //if (ball.x > SCREEN_WIDTH - ball.w)
             //bVel.xVel *= -1;
-        if (ball.y < 0){
+        if ( ( ball.y < 0 ) && ( bVel.yVel < 0 ) ) {
             bVel.yVel *= -1;
             Mix_PlayChannel( -1, gLow, 0 );
         }
@@ -447,11 +451,15 @@ class Pong : public GameState
             gameOver();
         }
 
-        //spR = ball.y % 256;
-        //spG = lPaddle.y % 256;
-        //spB = rPaddle.y % 256;
-        //bgR = 0x80;
-
+        if (victory) {
+            fun++;
+            spR = ( fun % 192 ) + 64;
+            spG = ( ( fun + 64) % 192 ) + 64;
+            spB = ( (fun + 128 ) % 192 ) + 64;
+            if (fun > 192)
+                fun = 0;
+            //bgR = 0x80;
+        }
     }
 
     void render(){
@@ -466,8 +474,15 @@ class Pong : public GameState
         SDL_RenderFillRect(gRenderer, &lPaddle);
         SDL_RenderFillRect(gRenderer, &rPaddle);
         SDL_RenderFillRect(gRenderer, &ball);
+
+        lScoreTextTexture.setColor(spR, spG, spB);
         lScoreTextTexture.render( PADDLE_WIDTH * 10, lScoreTextTexture.getHeight() / 2 );
+
+        rScoreTextTexture.setColor(spR, spG, spB);
         rScoreTextTexture.render( SCREEN_WIDTH - rScoreTextTexture.getWidth() - (PADDLE_WIDTH * 10), rScoreTextTexture.getHeight() / 2 );
+
+        msgTextTexture.setColor(spR, spG, spB);
+        msgTextTexture2.setColor(spR, spG, spB);
         msgTextTexture.render(SCREEN_WIDTH/2 - msgTextTexture.getWidth()/2, msgTextTexture.getHeight() / 2 );
         msgTextTexture2.render(SCREEN_WIDTH/2 - msgTextTexture2.getWidth()/2, SCREEN_HEIGHT - msgTextTexture2.getHeight() * 2 );
     }

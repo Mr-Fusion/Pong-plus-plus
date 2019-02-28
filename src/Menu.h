@@ -109,7 +109,7 @@ class Menu : public GameState
         {
             //Render text
             SDL_Color textColor = { 0xFF, 0xFF, 0xFF };
-            if( !creditText.loadFromRenderedText( "By Joel Turner | Version: 0.9.0", textColor ) )
+            if( !creditText.loadFromRenderedText( "By Joel Turner | Version: 1.0.0", textColor ) )
             {
                 printf( "Failed to render credit text!\n" );
                 success = false;
