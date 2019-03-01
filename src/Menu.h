@@ -8,34 +8,28 @@
 class Menu : public GameState
 {
     public:
-
     
-    //LButton eButton;    
     LButton mButton;
-    //LButton hButton;
 
-    LTexture ButtonSpriteSheet;
+    std::stringstream credit;
 
     LTexture titleText;
-    LTexture eText;
     LTexture mText;
-    LTexture hText;
     LTexture creditText;
 
-    LTexture cautionBackdrop;
-    LTexture menuPlate;
-
-    SDL_Rect ButtonSpriteClips[ BUTTON_SPRITE_NUM ];
-
     SDL_Rect paddle;
+
+    SDL_Color textColor;
 
     ///Constructor Function
     Menu(){
 
-        paddle.x = 12;
+        paddle.x = PADDLE_OFFSET;
         paddle.y = 0;
         paddle.w = PADDLE_WIDTH;
         paddle.h = PADDLE_HEIGHT;
+
+        textColor = { 0xFF, 0xFF, 0xFF };
 
         //Load media
         if( !loadMedia() )
@@ -45,9 +39,7 @@ class Menu : public GameState
         else
         {
         	//Initialize Menu here
-            //eButton = LButton(SCREEN_WIDTH/4 - BUTTON_WIDTH/2, 200, BUTTON_WIDTH, BUTTON_HEIGHT);
         	mButton = LButton(0, SCREEN_HEIGHT/2, SCREEN_WIDTH, mText.getHeight() );
-            //hButton = LButton(SCREEN_WIDTH*3/4 - BUTTON_WIDTH/2, 200, BUTTON_WIDTH, BUTTON_HEIGHT);
 
         	SDL_SetWindowSize(gWindow,SCREEN_WIDTH, SCREEN_HEIGHT);
         }
@@ -61,14 +53,9 @@ class Menu : public GameState
 		//Destroy Menu assets here
 
         //Free loaded image
-        ButtonSpriteSheet.free();
         titleText.free();
-        eText.free();
         mText.free();
-        hText.free();
         creditText.free();
-        cautionBackdrop.free();
-        menuPlate.free();
 
     }
 
@@ -91,7 +78,6 @@ class Menu : public GameState
         else
         {
             //Render text
-            SDL_Color textColor = { 0xFF, 0xFF, 0xFF };
             if( !titleText.loadFromRenderedText( "PONG", textColor ) )
             {
                 printf( "Failed to render title text!\n" );
@@ -108,8 +94,12 @@ class Menu : public GameState
         else
         {
             //Render text
-            SDL_Color textColor = { 0xFF, 0xFF, 0xFF };
-            if( !creditText.loadFromRenderedText( "By Joel Turner | Version: 1.0.0", textColor ) )
+            //Set text to be rendered
+            credit.str( "" );
+            credit << "By Joel Turner | Version: " << MAJOR_REV << "." << MINOR_REV << "." << INCREMENTAL_REV;
+
+            //Render text
+            if( !creditText.loadFromRenderedText( credit.str().c_str(), textColor ) )
             {
                 printf( "Failed to render credit text!\n" );
                 success = false;
@@ -125,20 +115,9 @@ class Menu : public GameState
         else
         {
             //Render text
-            SDL_Color textColor = { 0xFF, 0xFF, 0xFF };
-            if( !eText.loadFromRenderedText( "Easy", textColor ) )
-            {
-                printf( "Failed to render eText!\n" );
-                success = false;
-            }
             if( !mText.loadFromRenderedText( "BEGIN", textColor ) )
             {
                 printf( "Failed to render mText!\n" );
-                success = false;
-            }
-            if( !hText.loadFromRenderedText( "Hard", textColor ) )
-            {
-                printf( "Failed to render hText!\n" );
                 success = false;
             }
         }
@@ -153,7 +132,7 @@ class Menu : public GameState
         //Get mouse position
         if( e->type == SDL_MOUSEMOTION ){
             SDL_GetMouseState( &x, &y );
-            //paddle.x = x;
+
         paddle.y = y - (paddle.h/2);
             if ( y > SCREEN_HEIGHT - paddle.h/2 )
                 paddle.y = SCREEN_HEIGHT - paddle.h;
@@ -162,40 +141,20 @@ class Menu : public GameState
         }
 
         //Handle button events first
-        //eButton.handleEvent(e);
         mButton.handleEvent(e);
-       // hButton.handleEvent(e);
-
-        //if (eButton.isClicked)
-            //set_next_state(STATE_GAME_EASY);
 
         if (mButton.isClicked)
             set_next_state(STATE_GAME_MED);
-
-        //if (hButton.isClicked)
-            //set_next_state(STATE_GAME_HARD);
     }
 
     void logic(){
 
-        if (mButton.inside){
-            SDL_Color textColor = { 0xFF, 0x00, 0x00, 0x00 };
-            if( !mText.loadFromRenderedText( "BEGIN", textColor ) )
-            {
-                printf( "Failed to render mText!\n" );
-            }
-        }
-        else {
-            SDL_Color textColor = { 0x0FF, 0xFF, 0xFF, 0xFF };
-            if( !mText.loadFromRenderedText( "BEGIN", textColor ) )
-            {
-                printf( "Failed to render mText!\n" );
-            }
-        }
-    	//eButton.logic();
-        mButton.logic();
-        //hButton.logic();
+        if (mButton.inside)
+            mText.setColor(0xFF, 0x00, 0x00);
+        else
+            mText.setColor(0xFF, 0xFF, 0xFF);
 
+        mButton.logic();
 
     }
 
@@ -203,15 +162,9 @@ class Menu : public GameState
 
         SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
         SDL_RenderFillRect(gRenderer, &paddle);
-    	//cautionBackdrop.render(0,0);
-    	//menuPlate.render(32,32);
-        //eButton.render(ButtonSpriteClips, &ButtonSpriteSheet);
-        //mButton.render(ButtonSpriteClips, &ButtonSpriteSheet);
-        //hButton.render(ButtonSpriteClips, &ButtonSpriteSheet);
+
         titleText.render(SCREEN_WIDTH/2 - titleText.getWidth()/2, 30);
-        //eText.render(SCREEN_WIDTH/4 - BUTTON_WIDTH/2 + eButton.mDimension.w/2 - eText.getWidth()/2, 200 + BUTTON_HEIGHT + 10);
         mText.render(SCREEN_WIDTH/2 - mText.getWidth()/2, SCREEN_HEIGHT/2);
-        //hText.render(SCREEN_WIDTH*3/4 - BUTTON_WIDTH/2 + hButton.mDimension.w/2 - hText.getWidth()/2, 200 + BUTTON_HEIGHT + 10);
         creditText.render(SCREEN_WIDTH/2 - creditText.getWidth()/2, SCREEN_HEIGHT - 60);
     }
 

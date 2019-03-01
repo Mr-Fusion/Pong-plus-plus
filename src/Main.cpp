@@ -8,7 +8,6 @@
 #include <ctime>
 
 #include "Const.h"
-//#include "Grid.h"
 #include "Pong.h"
 #include "LTexture.h"
 #include "GameState.h"

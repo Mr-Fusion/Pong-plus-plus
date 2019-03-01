@@ -6,11 +6,19 @@
 
 //Game state base class
 
+enum GameStates
+{
+    STATE_NULL,
+    STATE_MENU,
+    STATE_GAME_EASY,
+    STATE_GAME_MED,
+    STATE_GAME_HARD,
+    STATE_EXIT
+};
 
 //State variables
 int stateID = STATE_NULL;
 int nextState = STATE_NULL;
-
 
 
 class GameState

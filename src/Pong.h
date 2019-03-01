@@ -5,11 +5,27 @@
 #include <stdlib.h>
 #include <sstream>
 #include "Const.h"
-//#include "Grid.h"
 #include "GameState.h"
-//#include "Button.h"
 #include "LTimer.h"
 #include "LTexture.h"
+
+#define PADDLE_HEIGHT   60
+#define PADDLE_WIDTH    8
+#define PADDLE_OFFSET   12
+
+#define BALL_WIDTH      8
+#define BALL_HEIGHT     8
+
+#define SERVE_SPEED     5
+#define MAX_SPEED       15
+
+#define MAX_PADDLE_VEL  6
+
+#define POINTS_TO_WIN   15
+
+typedef struct _Velocity_Vector{
+  int yVel, xVel;
+} VelocityVector;
 
 class Pong : public GameState
 {
@@ -22,7 +38,7 @@ class Pong : public GameState
     int lScore;
     int rScore;
 
-    int fun;
+    int colorCount;
 
     bool lGoal;
     bool rGoal;
@@ -63,12 +79,12 @@ class Pong : public GameState
     ///Constructor Function
     Pong(){
 
-        lPaddle.x = 12;
+        lPaddle.x = PADDLE_OFFSET;
         lPaddle.y = SCREEN_HEIGHT/2;
         lPaddle.w = PADDLE_WIDTH;
         lPaddle.h = PADDLE_HEIGHT;
 
-        rPaddle.x = SCREEN_WIDTH - 12 - PADDLE_WIDTH;
+        rPaddle.x = SCREEN_WIDTH - PADDLE_OFFSET - PADDLE_WIDTH;
         rPaddle.y = SCREEN_HEIGHT/2;
         rPaddle.w = PADDLE_WIDTH;
         rPaddle.h = PADDLE_HEIGHT;
@@ -92,7 +108,7 @@ class Pong : public GameState
         lScore = 0;
         rScore = 0;
 
-        fun = 0;
+        colorCount = 0;
 
         lGoal = false;
         rGoal = false;
@@ -112,7 +128,6 @@ class Pong : public GameState
         else
         {
             //Initialize playing field dimensions, difficulty, and appearance
-
             startGame();
 
             //Initialize and display graphical interface
@@ -125,14 +140,13 @@ class Pong : public GameState
     ~Pong(){
         printf("Gamestate Object Deconstructing...\n");
 
-        //Free loaded image
-
         //Free the sound effects
         Mix_FreeChunk( gLow );
         gLow = NULL;
         Mix_FreeChunk( gHigh );
         gHigh = NULL;
 
+        //Free loaded image
         rScoreTextTexture.free();
         lScoreTextTexture.free();
         msgTextTexture.free();
@@ -162,7 +176,7 @@ class Pong : public GameState
 
     }
 
-    //TODO: Can we streamline the sprite sheet creationg into a function?
+    //TODO: Can we streamline the sprite sheet creation into a function?
     bool loadMedia()
     {
         //Loading success flag
@@ -214,15 +228,7 @@ class Pong : public GameState
         }
 
         //Set text to be rendered
-        msgText2.str( "" );
-        msgText2 << "" << "Good Luck!";
-
-        //Render text
-        if( !msgTextTexture2.loadFromRenderedText( msgText2.str().c_str(), textColor ) )
-        {
-            printf( "Unable to render message texture!\n" );
-        }
-
+        setMessage2("Good Luck!");
 
         return success;
     }
@@ -235,7 +241,7 @@ class Pong : public GameState
         //Render text
         if( !msgTextTexture.loadFromRenderedText( msgText.str().c_str(), textColor ) )
         {
-            printf( "Unable to render Left Score texture!\n" );
+            printf( "Unable to render message texture!\n" );
         }
 
     }
@@ -248,7 +254,7 @@ class Pong : public GameState
         //Render text
         if( !msgTextTexture2.loadFromRenderedText( msgText2.str().c_str(), textColor ) )
         {
-            printf( "Unable to render Left Score texture!\n" );
+            printf( "Unable to render message texture 2!\n" );
         }
 
     }
@@ -276,7 +282,7 @@ class Pong : public GameState
         //Get mouse position
         if( e->type == SDL_MOUSEMOTION ){
             SDL_GetMouseState( &x, &y );
-            //lPaddle.x = x;
+
         lPaddle.y = y - (lPaddle.h/2);
             if ( y > SCREEN_HEIGHT - lPaddle.h/2 )
                 lPaddle.y = SCREEN_HEIGHT - lPaddle.h;
@@ -300,8 +306,7 @@ class Pong : public GameState
             bVel.yVel *= -1;
             Mix_PlayChannel( -1, gLow, 0 );
         }
-        //if (ball.x > SCREEN_WIDTH - ball.w)
-            //bVel.xVel *= -1;
+
         if ( ( ball.y < 0 ) && ( bVel.yVel < 0 ) ) {
             bVel.yVel *= -1;
             Mix_PlayChannel( -1, gLow, 0 );
@@ -380,15 +385,6 @@ class Pong : public GameState
         }
 
         //Right Paddle AI
-        // NOTES: Velocity 8-9 is a good challenge. Nearly impossible to score until the ball gains x velocity,
-        // and even then, scoring against the AI requires a sharp bank shot
-
-        // 10 is technically possibly, but requires nearly perfect play
-
-        // Need to determine what the easiest difficulty should be. 5 is a good candidate
-
-        // 3 is piss easy. Babby mode. Doesn't even look like the paddle is trying
-
         rPaddle.y += pVel.yVel;
 
         if (rPaddle.y < 0)
@@ -397,16 +393,16 @@ class Pong : public GameState
             rPaddle.y = SCREEN_HEIGHT - PADDLE_HEIGHT;
 
         if (ball.y < rPaddle.y + PADDLE_HEIGHT/4)
-            pVel.yVel = -6;
+            pVel.yVel = -MAX_PADDLE_VEL;
         else if (ball.y > rPaddle.y + PADDLE_HEIGHT * 3/4)
-            pVel.yVel = 6;
+            pVel.yVel = MAX_PADDLE_VEL;
         else
             pVel.yVel = 0;
 
         //Reset Serve after scoring
         if (lGoal){
             if (delayTimer.getTicks() > 2000){
-                bVel.xVel = -5;
+                bVel.xVel = -SERVE_SPEED;
                 bVel.yVel = rand() % 10 - 5;
                 ball.x = SCREEN_WIDTH/2;
                 ball.y = SCREEN_HEIGHT/2;
@@ -416,7 +412,7 @@ class Pong : public GameState
         }
         if (rGoal){
             if (delayTimer.getTicks() > 2000){
-                bVel.xVel = 5;
+                bVel.xVel = SERVE_SPEED;
                 bVel.yVel = rand() % 10 - 5;
                 ball.x = SCREEN_WIDTH/2;
                 ball.y = SCREEN_HEIGHT/2;
@@ -427,7 +423,7 @@ class Pong : public GameState
 
         if (newGame){
             if (delayTimer.getTicks() > 3000){
-                bVel.xVel = 5;
+                bVel.xVel = SERVE_SPEED;
                 bVel.yVel = 1;
 
                 lScore = 0;
@@ -452,25 +448,21 @@ class Pong : public GameState
         }
 
         if (victory) {
-            fun++;
-            spR = ( fun % 192 ) + 64;
-            spG = ( ( fun + 64) % 192 ) + 64;
-            spB = ( (fun + 128 ) % 192 ) + 64;
-            if (fun > 192)
-                fun = 0;
-            //bgR = 0x80;
+            colorCount++;
+            spR = ( colorCount % 192 ) + 64;
+            spG = ( ( colorCount + 64) % 192 ) + 64;
+            spB = ( (colorCount + 128 ) % 192 ) + 64;
+            if (colorCount > 192)
+                colorCount = 0;
         }
     }
 
     void render(){
 
-
-        //SDL_SetRenderDrawColor( gRenderer, ball.x % 256, ball.y % 256, 0xFF , 0xFF );
         SDL_SetRenderDrawColor( gRenderer, bgR, bgG, bgB, 0xFF );
         SDL_RenderFillRect(gRenderer, &field);
+
         SDL_SetRenderDrawColor( gRenderer, spR, spG, spB, 0xFF );
-        //SDL_SetRenderDrawColor( gRenderer, rPaddle.y % 256, ball.y % 256, lPaddle.y % 256, 0xFF );
-        //SDL_SetRenderDrawColor( gRenderer, ball.x % 256, ball.y % 256, 0xFF , 0xFF );
         SDL_RenderFillRect(gRenderer, &lPaddle);
         SDL_RenderFillRect(gRenderer, &rPaddle);
         SDL_RenderFillRect(gRenderer, &ball);
